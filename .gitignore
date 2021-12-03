@@ -1,0 +1,9 @@
+example_projects/*.aedtresults/
+example_projects/*.aedb/
+*.aedtresults/
+example_projects/*.lock
+__pycache__/
+/**/__pycache__/
+**/__pycache__/
+meshes/
+output/

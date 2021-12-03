@@ -1,0 +1,9 @@
+matplotlib
+numpy
+pyaedt==0.4.10
+pythonnet
+pywin32
+pyvista
+scipy
+pycollada
+
