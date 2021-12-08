@@ -14,22 +14,39 @@ import os
 import uuid
 
 class AEDTutils:
-    def __init__(self,project_name=None,design_name=None,version ="2021.2"):
+    def __init__(self,project_name='project1',design_name='design1',version ="2021.2"):
         
 
-        with Desktop(specified_version=version,new_desktop_session =False,close_on_exit =False):
-            if project_name:
-                self.aedtapp = Hfss(project_name=project_name,design_name=design_name,specified_version=version,solution_type='SBR+')
-            else:
-                self.aedtapp = Hfss(specified_version=version,solution_type='SBR+')
-            self.oDesign = self.aedtapp.odesign
-            oEditor = self.oDesign.SetActiveEditor("3D Modeler")
-            oEditor.SetModelUnits(["NAME:Units Parameter","Units:=", "meter","Rescale:=", False])
-            self.time_var_name = "time_var"
-            self.time = 0
-            self.add_or_edit_variable(self.time_var_name,str(self.time)+'s')
+        self.desktop = Desktop(specified_version=version,new_desktop_session =False,close_on_exit =False)
+        projects = self.desktop.project_list()
+        if project_name in projects:
+            increment=1
+            orig_proj_name = project_name
+            while  project_name in projects:
+                project_name = orig_proj_name+'_' + str(increment)
+                increment+=1
+            self.desktop.odesktop.SetActiveProject(project_name)
+        
+            designs = self.desktop.design_list()
+            orig_design_name=design_name
+            increment=1
+            while  design_name in designs:
+                design_name = orig_design_name+str(increment)
+                increment+=1
+            
+        self.aedtapp = Hfss(projectname=project_name,designname=design_name,specified_version=version,solution_type='SBR+')
+        
+        self.oDesign = self.aedtapp.odesign
+        oEditor = self.oDesign.SetActiveEditor("3D Modeler")
+        oEditor.SetModelUnits(["NAME:Units Parameter","Units:=", "meter","Rescale:=", False])
+        
+        self.time_var_name = "time_var"
+        self.time = 0
+        self.add_or_edit_variable(self.time_var_name,str(self.time)+'s')
                 
 
+    def release_desktop(self):
+        self.desktop.release_desktop(close_projects=False, close_on_exit=False)
 
     def diff(self,li1, li2): 
         """

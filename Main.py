@@ -44,7 +44,6 @@ aedt_version = "2021.2"
 #
 ###############################################################################
 
-
 #import mesh
 ani = AnimatedDAE(filename,save_path='./meshes/')
 
@@ -64,7 +63,7 @@ if remove_hands:
             del meshes_dict[each]
 
 #instance of AEDT
-aedt = AEDTutils(version =aedt_version)
+aedt = AEDTutils(project_name="dae_import_example",version =aedt_version)
 
 #add material property assigned to CAD
 aedt.add_material('human_avg',5,0.01,0)
@@ -87,10 +86,6 @@ for node_id in meshes_dict:
     phi = []
     theta = []
     psi = []
-    
-    phi2 = []
-    theta2 = []
-    psi2 = []
     
     x_ds_name = f'{node_id}_pos_x_ds'
     y_ds_name = f'{node_id}_pos_y_ds'
@@ -196,6 +191,8 @@ setup_name=aedt.insert_setup(simulation_params,setup_name = "Setup1")
 
 #create parameteric sweep, last time step is not valid so removing it.
 para_sweep_name = aedt.insert_parametric_sweep(0,time_stamps[-2],1/fps,setup_name)
+
+aedt.release_desktop()
 
 
 ###############################################################################
