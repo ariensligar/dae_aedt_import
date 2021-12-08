@@ -1,4 +1,7 @@
+
+
 # dae_aedt_import
+
 #Here is one way to get everything up and running. Other options exists, one area that you may want to consider changing is the python envionrment manager. It doesn't matter what evionrment manager you use, as long as you can install all the required packages
 
 
@@ -33,3 +36,6 @@ pip install spyder-kernels==2.2.0
 C:\Users\<username>\Anaconda3\envs\5g_wizard\python.exe
 
 #within spyder you can open 5G_Wizard_Standalong_NoGUI.py or 5G_Wizard.py and run the script
+
+#DAE Files
+# you can access a library of DAE files from mixamo.com
