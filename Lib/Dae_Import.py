@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Nov 22 11:46:09 2021
+
+imports DAE files and creates mesh (STL files). Outputs mesh transforms versus
+time.
+
+@author: drey (original dae import and CS)
+@author: asligar (modified dae import to support AEDT needs)
+"""
+
 import collada
 import scipy
 import scipy.interpolate
@@ -5,43 +16,71 @@ import numpy as np
 import copy
 import pyvista as pv
 import os
+from scipy.spatial.transform import Rotation
 
+
+#utilitiy function for conversions between rot and euler
+def rot_to_euler(rot, order='zyz',deg=True):
+    rot = Rotation.from_matrix(rot)
+    euler_angles = rot.as_euler(order,degrees=deg)
+    #euler_angles = rot.as_rotvec(degrees=deg)
+    return euler_angles
+def euler_to_rot(euler, order='zyz',deg=True):
+    
+    if isinstance(euler,list):
+        euler=np.array(euler)
+    elif isinstance(euler, np.ndarray):
+        if np.ndim(euler)==2:
+            rot = np.zeros((euler.shape[0],3,3))
+            for n in range(euler.shape[0]):
+                rot_temp = Rotation.from_euler(order, euler[n],
+                                                       degrees=deg)
+                rot_temp = rot_temp.as_matrix()
+                rot[n]=rot_temp
+    else:
+        rot = Rotation.from_euler(order,euler, degrees=deg)
+        rot = rot.as_matrix()
+    return rot
 
 class CoordSys:
-  def __init__(self):
+    def __init__(self):
+    
+        self.time = 0
+        self.rot = np.eye(3)
+        self.pos = np.zeros(3)
+        self.transforms = None
+        self.euler_transforms = None
 
-    self.time = 0
-    self.rot = np.eye(3)
-    self.pos = np.zeros(3)
-    self.transforms = None
+      
+        
+    def __update(self,time):
+        if self.transforms is None:
+            self.rot = np.asarray(self.rot)
+            self.pos = np.asarray(self.pos)
+        else:
+            # set from interpolated transform and estimate velocity
+            self.set(self.transforms(time))
+    
+    def update(self,inGlobal = True,time=None):
+        if time!=None:
+          self.__update(time)
+        if inGlobal:
+            self.rot = np.ascontiguousarray(self.rot,dtype=np.float64)
+            self.pos = np.ascontiguousarray(self.pos,dtype=np.float64)
+    
+    
+    
+    # return 4x4 matrix transform
+    @property
+    def transform4x4(self):
+        ret = np.concatenate((np.asarray(self.rot),np.asarray(self.pos).reshape((-1,1))),axis=1)
+        ret = np.concatenate((ret,np.array([[0,0,0,1]])),axis=0)
+        return ret
+    # set position/orientation from 4x4 transform
+    def set(self,transform4x4):
+        self.pos = transform4x4[0:3,3]
+        self.rot = transform4x4[0:3,0:3]
 
-  def __update(self,time):
-    if self.transforms is None:
-        self.rot = np.asarray(self.rot)
-        self.pos = np.asarray(self.pos)
-    else:
-        # set from interpolated transform and estimate velocity
-        self.set(self.transforms(time))
-
-  def update(self,inGlobal = True,time=None):
-      if time!=None:
-        self.__update(time)
-      if inGlobal:
-          self.rot = np.ascontiguousarray(self.rot,dtype=np.float64)
-          self.pos = np.ascontiguousarray(self.pos,dtype=np.float64)
-
-
-
-  # return 4x4 matrix transform
-  @property
-  def transform4x4(self):
-      ret = np.concatenate((np.asarray(self.rot),np.asarray(self.pos).reshape((-1,1))),axis=1)
-      ret = np.concatenate((ret,np.array([[0,0,0,1]])),axis=0)
-      return ret
-  # set position/orientation from 4x4 transform
-  def set(self,transform4x4):
-    self.pos = transform4x4[0:3,3]
-    self.rot = transform4x4[0:3,0:3]
     
     
 class AnimatedDAE:
@@ -70,16 +109,42 @@ class AnimatedDAE:
         color = [0.8,0.8,0.8]
         # build joint transform interpolations
         jointTransforms = {}
+
+
         self.clipLength = -1
         for anim in self.dae.animations:
             times = anim.sourceById[anim.name + "-Matrix-animation-input"]
             times = np.reshape(times,-1)
+            self.times = times
             self.clipLength = max(self.clipLength,times[-1])
             transforms = anim.sourceById[anim.name + "-Matrix-animation-output-transform"]
             transforms = np.reshape(transforms,(-1,4,4)) 
             transforms = transforms*self.rescaleTransform
-            interpFunc = scipy.interpolate.interp1d(times,transforms,axis=0,assume_sorted=True)
+            
+            # HFSS requires euler angles for object orientations, the 3x3 rotational
+            # matrix that is defined here, needs to eventually be converted to 
+            # euler angles.
+            # I found that if I use the rotation matrix, and create an iterpolation function
+            # from it. When I convert to euler
+            # angles, then unwrap the phase. I get interpolation errors.
+            # What seems to work better, is convert rotational matrix to euler
+            # then unwrap, the convert back to rotation matrix. then when I 
+            # convert it back to euler and unwrap I don't get interpolation errors
+            
+            transforms2 = copy.deepcopy(transforms)
+            rot_3x3 = transforms[:,0:3,0:3]
+            euler_angs = rot_to_euler(rot_3x3,order='zyz',deg=False)
+
+            phi = np.rad2deg(np.unwrap(euler_angs[:,0],period=np.pi*2))
+            theta = np.rad2deg(np.unwrap(euler_angs[:,1],period=np.pi*2))
+            psi = np.rad2deg(np.unwrap(euler_angs[:,2],period=np.pi*2))
+            euler = np.vstack((phi,theta,psi)).T
+            
+            rot = euler_to_rot(euler)
+            transforms2[:,0:3,0:3] = rot
+            interpFunc = scipy.interpolate.interp1d(times,transforms2,axis=0,assume_sorted=True)
             jointTransforms[anim.name] = interpFunc
+
         def recurseJoints(
             sceneTree = None,
             nodeID = None):
@@ -100,6 +165,7 @@ class AnimatedDAE:
                 childCS = CoordSys()
                 if childID in jointTransforms:
                     childCS.transforms = jointTransforms[childID]
+
                 else:
                     childTransform = child.matrix*self.rescaleTransform
                     childCS.set(childTransform)
@@ -204,7 +270,10 @@ class AnimatedDAE:
         
         nodeCS.update(time=time,inGlobal=False)
         nodeTransform = np.dot(parentTransform,nodeCS.transform4x4)
+        
         jointTransforms[nodeID] = nodeTransform
+
+
         for child in children:
             self.__updateGlobalJointTransforms(time,jointTransforms,child.id,nodeID)
         return jointTransforms
@@ -213,8 +282,6 @@ class AnimatedDAE:
     
       # update the rigid body approximation of joint-weighted meshes used by the RSS
     def updateRigidMeshes(self,time):
-        
-        
         
         transforms = self.__updateGlobalJointTransforms(time)
         mesh_dict = {}
@@ -229,9 +296,5 @@ class AnimatedDAE:
                 temp_dict = {'file_name':file_name,'mesh':mesh,'transform':transforms[nodeID]}
                 mesh_dict[nodeID] = temp_dict
 
-
-                    # mesh.transform(transforms[nodeID])
-                    # meshes.append(mesh)
-                
-        
         return mesh_dict
+    

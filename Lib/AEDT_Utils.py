@@ -2,6 +2,9 @@
 """
 Created on Mon Nov 22 11:46:09 2021
 
+interaction between main script and aedt is defined here, assumes
+that the desktop is open, uses current active project
+
 @author: asligar
 """
 
@@ -11,8 +14,8 @@ import os
 import uuid
 
 class AEDTutils:
-    def __init__(self,project_name=None,design_name=None):
-        version ="2021.2"
+    def __init__(self,project_name=None,design_name=None,version ="2021.2"):
+        
 
         with Desktop(specified_version=version,new_desktop_session =False,close_on_exit =False):
             if project_name:
@@ -267,7 +270,7 @@ class AEDTutils:
                     "Type:="        , "Parametric Beam",
                     "Unit:="        , "meter",
                     "Is Parametric Array:="    , False,
-                    "Size:="        , "1meter",
+                    "Size:="        , "0.1meter",
                     "MatchedPortImpedance:=", "50ohm",
                     "Polarization:="    , polarization,
                     "Representation:="    , "Far Field",
@@ -524,3 +527,83 @@ class AEDTutils:
 
         self.aedtapp.modeler.set_working_coordinate_system(cs_name)
         return cs_name
+
+
+    def insert_setup(self,simulation_params,setup_name = "Setup1"):
+        """
+        insert a solution setup, these settings can be modified as needed
+        """
+        oModule = self.oDesign.GetModule("AnalysisSetup")
+
+
+        oModule.InsertSetup("HfssDriven", 
+            [
+                "NAME:"+ setup_name,
+                "IsEnabled:="        , True,
+                [
+                    "NAME:MeshLink",
+                    "ImportMesh:="        , False
+                ],
+                "IsSbrRangeDoppler:="    , True,
+                "SbrRangeDopplerWaveformType:=", "PulseDoppler",
+                "SbrRangeDopplerTimeVariable:=", self.time_var_name,
+                "SbrRangeDopplerCenterFreq:=", f"{simulation_params['sol_freq']}GHz",
+                "SbrRangeDopplerRangeResolution:=", f"{simulation_params['range_res']}meter",
+                "SbrRangeDopplerRangePeriod:=", f"{simulation_params['range_period']}meter",
+                "SbrRangeDopplerVelocityResolution:=", f"{simulation_params['vel_res']}m_per_sec",
+                "SbrRangeDopplerVelocityMin:=", f"{simulation_params['vel_min']}m_per_sec",
+                "SbrRangeDopplerVelocityMax:=", f"{simulation_params['vel_max']}m_per_sec",
+                "DopplerRayDensityPerWavelength:=", simulation_params['ray_density'],
+                "MaxNumberOfBounces:="    , simulation_params['bounces']
+            ])
+
+        return setup_name
+    
+    def insert_parametric_sweep(self,time_start,time_stop,time_step,setup_name):
+            """
+            create parametric sweep setup for the time values specified in the file
+            exported from scanner for each time step
+
+            returns name of parametric sweep
+            """
+            oModule = self.oDesign.GetModule("Optimetrics")
+            sweep_str = "LIN " + str(time_start) + "s " + str(time_stop) + "s " + str(time_step) + "s"
+            para_sweep_name = "Full_Time_Sweep"
+            original_name = para_sweep_name
+            all_para_setup_names = oModule.GetSetupNames()
+            n=1
+            while para_sweep_name in all_para_setup_names:
+                para_sweep_name = original_name + str(n)
+                n+=1
+            oModule = self.oDesign.GetModule("Optimetrics")
+            oModule.InsertSetup("OptiParametric", 
+                [
+                    "NAME:"+para_sweep_name,
+                    "IsEnabled:="        , True,
+                    [
+                        "NAME:ProdOptiSetupDataV2",
+                        "SaveFields:="        , False
+                    ],
+                    [
+                        "NAME:StartingPoint"
+                    ],
+                    "Sim. Setups:="        , [setup_name],
+                    [
+                        "NAME:Sweeps",
+                        [
+                            "NAME:SweepDefinition",
+                            "Variable:="        , self.time_var_name,
+                            "Data:="        , sweep_str,
+                            "OffsetF1:="        , False,
+                            "Synchronize:="        , 0
+                        ]
+                    ],
+                    [
+                        "NAME:Sweep Operations"
+                    ],
+                    [
+                        "NAME:Goals"
+                    ]
+                ])
+
+            return para_sweep_name
