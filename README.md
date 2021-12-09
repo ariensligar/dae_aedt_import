@@ -42,7 +42,7 @@ once this is installed, open up spyder and go to the menu Tool> Preferences > Py
 set the python interpreter to the one used in your anaconda environment, something like...
 
 ```
-C:\Users\<username>\Anaconda3\envs\5g_wizard\python.exe
+C:\Users\<username>\Anaconda3\envs\dae_import\python.exe
 ```
 
 within spyder you can run Main.py

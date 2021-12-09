@@ -348,7 +348,7 @@ class AEDTutils:
                 "Notes:="        , "",
                 "IconType:="        , "",
                 "Owner:="        , "Arien Sligar",
-                "Email:="        , "arien.sligar@ansys.com",
+                "Email:="        , "",
                 "Date:="        , "11:20:05 AM  Dec 03, 2021",
                 "HasLabel:="        , False,
                 "IncludedParts:="    , [name],
