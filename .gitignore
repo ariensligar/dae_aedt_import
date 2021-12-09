@@ -1,5 +1,6 @@
 example_projects/*.aedtresults/
 example_projects/*.aedb/
+example_projects/*.aedt/
 *.aedtresults/
 example_projects/*.lock
 __pycache__/

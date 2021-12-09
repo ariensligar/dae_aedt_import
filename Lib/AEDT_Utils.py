@@ -20,11 +20,6 @@ class AEDTutils:
         self.desktop = Desktop(specified_version=version,new_desktop_session =False,close_on_exit =False)
         projects = self.desktop.project_list()
         if project_name in projects:
-            increment=1
-            orig_proj_name = project_name
-            while  project_name in projects:
-                project_name = orig_proj_name+'_' + str(increment)
-                increment+=1
             self.desktop.odesktop.SetActiveProject(project_name)
         
             designs = self.desktop.design_list()
