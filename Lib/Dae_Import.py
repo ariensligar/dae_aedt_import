@@ -93,11 +93,24 @@ class AnimatedDAE:
         self.filename = filename
         self.dae = collada.Collada(filename)
 
+
         if self.dae.assetInfo.upaxis == 'Y_UP':
             self.local2global = np.asarray(
               [[ 0, 0,+1, 0],\
               [+1, 0, 0, 0],\
               [ 0,+1, 0, 0],\
+              [ 0, 0, 0,+1]])
+        elif self.dae.assetInfo.upaxis == 'X_UP':
+            self.local2global = np.asarray(
+              [[ 0, +1,0, 0],\
+              [0, 0, +1, 0],\
+              [ +1,0, 0, 0],\
+              [ 0, 0, 0,+1]])
+        elif self.dae.assetInfo.upaxis == 'Z_UP':
+            self.local2global = np.asarray(
+              [[ +1, 0,+1, 0],\
+              [0, +1, 0, 0],\
+              [ 0,0, +1, 0],\
               [ 0, 0, 0,+1]])
 
         else: raise RuntimeError("unsupported up-axis in dae file")

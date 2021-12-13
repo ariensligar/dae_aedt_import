@@ -26,7 +26,7 @@ import copy
 #full path to file name that we want to import
 filename = './example_dae/Falling.dae'
 #filename = './example_dae/Walking.dae'
-
+filename = './example_dae/wind_turbine.dae'
 #Define Framerate, ideally should be same as DAE file, but interpolation will allow any frame rate
 fps=30
 
