@@ -1,6 +1,6 @@
 matplotlib
 numpy
-pyaedt==0.4.10
+pyaedt==0.4.18
 pythonnet
 pywin32
 pyvista

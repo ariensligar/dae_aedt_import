@@ -15,33 +15,32 @@ import uuid
 
 class AEDTutils:
     def __init__(self,project_name='project1',design_name='design1',version ="2021.2"):
-        
+        self.aedtapp = None
+        with Desktop(specified_version=version,non_graphical=False,new_desktop_session=False,close_on_exit=False) as d:
 
-        self.desktop = Desktop(specified_version=version,new_desktop_session =False,close_on_exit =False)
-        projects = self.desktop.project_list()
-        if project_name in projects:
-            self.desktop.odesktop.SetActiveProject(project_name)
-        
-            designs = self.desktop.design_list()
-            orig_design_name=design_name
-            increment=1
-            while  design_name in designs:
-                design_name = orig_design_name+str(increment)
-                increment+=1
             
-        self.aedtapp = Hfss(projectname=project_name,designname=design_name,specified_version=version,solution_type='SBR+')
-        
-        self.oDesign = self.aedtapp.odesign
-        oEditor = self.oDesign.SetActiveEditor("3D Modeler")
+            if project_name in d.project_list():
+                orig_design_name=design_name
+                increment=1
+                while design_name in d.design_list(project_name):
+                    design_name = orig_design_name+str(increment)
+                    increment+=1
+                        
+        self.project_name = project_name
+        self.design_name = design_name
+                        
+
+
+    def setup_design(self):
+        oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         oEditor.SetModelUnits(["NAME:Units Parameter","Units:=", "meter","Rescale:=", False])
-        
         self.time_var_name = "time_var"
         self.time = 0
         self.add_or_edit_variable(self.time_var_name,str(self.time)+'s')
                 
 
     def release_desktop(self):
-        self.desktop.release_desktop(close_projects=False, close_on_exit=False)
+        self.aedtapp.release_desktop(close_projects=False, close_on_exit=False)
 
     def diff(self,li1, li2): 
         """
@@ -300,7 +299,7 @@ class AEDTutils:
     def import_stl(self,file_name,cs_name='Global'):
         self.aedtapp.modeler.set_working_coordinate_system(cs_name)
         full_stl_path = os.path.abspath(file_name)
-        oEditor = self.oDesign.SetActiveEditor("3D Modeler")
+        oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         all_objects_before_import = oEditor.GetMatchedObjectName("*")
         oEditor.Import(
             [
@@ -330,7 +329,7 @@ class AEDTutils:
 
         
     def convert_to_3d_comp(self,name,cs_name):
-        oEditor = self.oDesign.SetActiveEditor("3D Modeler")
+        oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         oEditor.ReplaceWith3DComponent(
             [
                 "NAME:ReplaceData",
@@ -380,17 +379,17 @@ class AEDTutils:
         None.
         '''
         
-        oDesign = self.aedtapp.odesign    
+
         temp_data = ["NAME:Coordinates"]
         for each in data:
             temp_data.append(["NAME:Coordinate","X:=", float(each[0]),"Y:=",
                 float(each[1])])        
         ds = ["NAME:"+ name,temp_data]
     
-        if oDesign.HasDataset(name) == True:
-            oDesign.EditDataset(name,ds)
+        if self.aedtapp.odesign.HasDataset(name) == True:
+            self.aedtapp.odesign.EditDataset(name,ds)
         else:
-            oDesign.AddDataset(ds)
+            self.aedtapp.odesign.AddDataset(ds)
     
     def move(self,object_name,pos_ds_names,reference_cs='Global'):
         if pos_ds_names:
@@ -406,7 +405,7 @@ class AEDTutils:
                z=f"pwl({pos_ds_names['z']},{self.time_var_name})"
             else:
                z='0'
-        oEditor = self.oDesign.SetActiveEditor("3D Modeler")
+        oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         self.aedtapp.modeler.set_working_coordinate_system(reference_cs)
         oEditor.Move(
             [
@@ -424,7 +423,7 @@ class AEDTutils:
     def rotate(self,object_name,rot_ds_name,axis='X',reference_cs='Global'):
         rotate=f"pwl({rot_ds_name},{self.time_var_name})*1deg"
 
-        oEditor = self.oDesign.SetActiveEditor("3D Modeler")
+        oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         self.aedtapp.modeler.set_working_coordinate_system(reference_cs)
         oEditor.Rotate(
         [
@@ -438,7 +437,7 @@ class AEDTutils:
             "RotateAngle:="        , rotate
         ])
     def create_cs(self,cs_name,pos=[0,0,0],euler=[0,0,0],reference_cs='Global',order='ZYZ'):
-       oEditor = self.oDesign.SetActiveEditor("3D Modeler")
+       oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
        
        self.aedtapp.modeler.set_working_coordinate_system(reference_cs)
        
@@ -473,7 +472,7 @@ class AEDTutils:
    
     
     def create_cs_dataset(self,cs_name,pos_ds_names=None,euler_ds_names=None,reference_cs='Global',order='ZYZ'):
-        oEditor = self.oDesign.SetActiveEditor("3D Modeler")
+        oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         
         self.aedtapp.modeler.set_working_coordinate_system(reference_cs)
         
@@ -545,7 +544,7 @@ class AEDTutils:
         """
         insert a solution setup, these settings can be modified as needed
         """
-        oModule = self.oDesign.GetModule("AnalysisSetup")
+        oModule = self.aedtapp.odesign.GetModule("AnalysisSetup")
 
 
         oModule.InsertSetup("HfssDriven", 
@@ -578,7 +577,7 @@ class AEDTutils:
 
             returns name of parametric sweep
             """
-            oModule = self.oDesign.GetModule("Optimetrics")
+            oModule = self.aedtapp.odesign.GetModule("Optimetrics")
             sweep_str = "LIN " + str(time_start) + "s " + str(time_stop) + "s " + str(time_step) + "s"
             para_sweep_name = "Full_Time_Sweep"
             original_name = para_sweep_name
@@ -587,7 +586,7 @@ class AEDTutils:
             while para_sweep_name in all_para_setup_names:
                 para_sweep_name = original_name + str(n)
                 n+=1
-            oModule = self.oDesign.GetModule("Optimetrics")
+            oModule = self.aedtapp.odesign.GetModule("Optimetrics")
             oModule.InsertSetup("OptiParametric", 
                 [
                     "NAME:"+para_sweep_name,
