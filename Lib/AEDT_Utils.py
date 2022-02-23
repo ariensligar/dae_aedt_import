@@ -31,13 +31,13 @@ class AEDTutils:
                         
 
 
-    def setup_design(self):
+    def setup_design(self,time_stamps):
         oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         oEditor.SetModelUnits(["NAME:Units Parameter","Units:=", "meter","Rescale:=", False])
         self.time_var_name = "time_var"
         self.time = 0
         self.add_or_edit_variable(self.time_var_name,str(self.time)+'s')
-                
+        self.time_stamps = time_stamps
 
     def release_desktop(self):
         self.aedtapp.release_desktop(close_projects=False, close_on_exit=False)
@@ -471,7 +471,13 @@ class AEDTutils:
        return cs_name
    
     
-    def create_cs_dataset(self,cs_name,pos_ds_names=None,euler_ds_names=None,reference_cs='Global',order='ZYZ'):
+    def create_cs_dataset(self,cs_name,pos_ds_names=None,euler_ds_names=None,reference_cs='Global',order='ZYZ',loop_animation=False):
+        
+        if loop_animation:
+            animation_length = self.time_stamps[-1]
+            time_str = f"mod({self.time_var_name},{animation_length})"
+        else:
+            time_str = self.time_var_name
         oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         
         self.aedtapp.modeler.set_working_coordinate_system(reference_cs)
@@ -480,15 +486,15 @@ class AEDTutils:
         
         if pos_ds_names:
             if 'x' in pos_ds_names.keys():
-                x=f"pwl({pos_ds_names['x']},{self.time_var_name})"
+                x=f"pwl({pos_ds_names['x']},{time_str})"
             else:
                 x='0'
             if 'y' in pos_ds_names.keys():
-                y=f"pwl({pos_ds_names['y']},{self.time_var_name})"
+                y=f"pwl({pos_ds_names['y']},{time_str})"
             else:
                 y='0'
             if 'z' in pos_ds_names.keys():
-               z=f"pwl({pos_ds_names['z']},{self.time_var_name})"
+               z=f"pwl({pos_ds_names['z']},{time_str})"
             else:
                z='0'
         else:
@@ -498,15 +504,15 @@ class AEDTutils:
         
         if euler_ds_names:
             if 'phi' in euler_ds_names.keys():
-                phi=f"pwl({euler_ds_names['phi']},{self.time_var_name})*1deg"
+                phi=f"pwl({euler_ds_names['phi']},{time_str})*1deg"
             else:
                 phi='0deg'
             if 'theta' in euler_ds_names.keys():
-                theta = f"pwl({euler_ds_names['theta']},{self.time_var_name})*1deg"
+                theta = f"pwl({euler_ds_names['theta']},{time_str})*1deg"
             else:
                 theta='0deg'
             if 'psi' in euler_ds_names.keys():
-                psi = f"pwl({euler_ds_names['psi']},{self.time_var_name})*1deg"
+                psi = f"pwl({euler_ds_names['psi']},{time_str})*1deg"
             else:
                 psi='0deg'
         else:

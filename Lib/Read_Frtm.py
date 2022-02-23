@@ -79,10 +79,13 @@ class read_frtm(object):
                 elif '@ FreqSweep ' in line_str:
                     freq_sweep_line = line_str  
                     c = freq_sweep_line.split("=")
-                    c = c[1].split(" ")
+                    c = c[1].replace("\"","")
+                    c = c.lstrip()
+                    c = c.rstrip()
+                    c = c.split(" ")
                     c = [i for i in c if i] 
-                    self.freq_start =  float(c[0].replace("\"",""))
-                    self.freq_stop = float(c[1].replace("\"","")) 
+                    self.freq_start =  float(c[0])
+                    self.freq_stop = float(c[1]) 
                     self.nfreq = int(c[2].replace("\"",""))+1
                     self.freq_sweep = np.linspace(self.freq_start,self.freq_stop,num=self.nfreq)
                     self.freq_delta = self.freq_sweep[1]-self.freq_sweep[0]

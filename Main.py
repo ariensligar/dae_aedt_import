@@ -26,8 +26,8 @@ import copy
 
 #full path to file name that we want to import
 #filename = './example_dae/Falling.dae'
-#filename = './example_dae/Sitting_Idle.dae'
-filename = './example_dae/Walking.dae'
+filename = './example_dae/Walking_InPlace.dae'
+
 
 #Define Framerate, ideally should be same as DAE file, but interpolation will allow any frame rate
 fps=30
@@ -36,7 +36,8 @@ fps=30
 smoothing=False
 #hands often have lots of small parts, we can remove them to speed up generation
 remove_hands=True 
-aedt_version = "2021.2"
+loop_animation=True
+aedt_version = "2022.1"
 
 
 ###############################################################################
@@ -81,7 +82,7 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
         aedt.aedtapp = aedtapp
         
 
-        aedt.setup_design()
+        aedt.setup_design(time_stamps)
         #add material property assigned to CAD
         aedt.add_material('human_avg',5,0.01,0)
         
@@ -170,7 +171,11 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
             aedt.add_dataset(psi_ds_name,psi_ds)
             
             #create dataset for each body part
-            cs_name = aedt.create_cs_dataset(node_id+'_cs',pos_ds_names=pos_ds_names,euler_ds_names=euler_ds_names,reference_cs=base_cs)
+            cs_name = aedt.create_cs_dataset(node_id+'_cs',
+                                             pos_ds_names=pos_ds_names,
+                                             euler_ds_names=euler_ds_names,
+                                             reference_cs=base_cs,
+                                             loop_animation=loop_animation)
         
             #using material propety human_avg for assignment
             imported_names = aedt.import_stl(file_name, cs_name=cs_name)
@@ -185,7 +190,7 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
             # aedt.move(node_id,pos_ds_names,reference_cs='Global')
             
         #create CS for radar location, create simple parametric tx/rx antenna
-        radar_cs = aedt.create_cs('radar_cs',pos=[10,0,0],euler=[0,180,0])
+        radar_cs = aedt.create_cs('radar_cs',pos=[10,0,0],euler=[180,0,0])
         aedt.insert_parametric_antenna('tx','30deg','80deg','Vertical',cs=radar_cs)
         aedt.insert_parametric_antenna('rx','30deg','80deg','Vertical',cs=radar_cs)
         aedt.set_tx_rx()
@@ -276,4 +281,4 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
 
 
 if __name__ == "__main__":
-    main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2")
+    main(filename,fps,smoothing=False,remove_hands=True,aedt_version= aedt_version)
