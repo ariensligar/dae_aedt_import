@@ -179,7 +179,7 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
         
             #using material propety human_avg for assignment
             imported_names = aedt.import_stl(file_name, cs_name=cs_name)
-            aedt.assign_material(imported_names,'human_avg')
+            aedt.assign_material(imported_names,'pec')
             aedt.assign_boundary(imported_names,'human_avg',bc_name=node_id+ "_bc")
             aedt.convert_to_3d_comp(node_id,cs_name)
             
