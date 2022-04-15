@@ -328,8 +328,12 @@ class AEDTutils:
         return name_of_objects_imported
 
         
-    def convert_to_3d_comp(self,name,cs_name):
+    def convert_to_3d_comp(self,name,cs_name,parts = None):
         oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
+        if parts==None:
+            parts= [name]
+        if not isinstance(parts, list):
+            parts = [parts]
         oEditor.ReplaceWith3DComponent(
             [
                 "NAME:ReplaceData",
@@ -345,7 +349,7 @@ class AEDTutils:
                 "Email:="        , "",
                 "Date:="        , "11:20:05 AM  Dec 03, 2021",
                 "HasLabel:="        , False,
-                "IncludedParts:="    , [name],
+                "IncludedParts:="    , parts,
                 "HiddenParts:="        , [],
                 "IncludedCS:="        , [cs_name],
                 "ReferenceCS:="        , cs_name,
@@ -420,9 +424,14 @@ class AEDTutils:
                 "TranslateVectorZ:="    , z
             ])
         
-    def rotate(self,object_name,rot_ds_name,axis='X',reference_cs='Global'):
-        rotate=f"pwl({rot_ds_name},{self.time_var_name})*1deg"
-
+    def rotate(self,object_name,rot_ds_name=None,axis='X',reference_cs='Global',single_rot=None):
+        if rot_ds_name:
+            rotate=f"pwl({rot_ds_name},{self.time_var_name})*1deg"
+        if single_rot:
+            rotate = f"{single_rot}*1deg"
+            
+        if isinstance(object_name, list):
+            object_name = ','.join(object_name)
         oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         self.aedtapp.modeler.set_working_coordinate_system(reference_cs)
         oEditor.Rotate(
@@ -436,6 +445,8 @@ class AEDTutils:
             "RotateAxis:="        , axis,
             "RotateAngle:="        , rotate
         ])
+        
+        
     def create_cs(self,cs_name,pos=[0,0,0],euler=[0,0,0],reference_cs='Global',order='ZYZ'):
        oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
        

@@ -26,7 +26,7 @@ import copy
 
 #full path to file name that we want to import
 #filename = './example_dae/Falling.dae'
-filename = './example_dae/Walking_InPlace.dae'
+#filename = './example_dae/Walking_InPlace.dae'
 
 
 #Define Framerate, ideally should be same as DAE file, but interpolation will allow any frame rate
@@ -102,12 +102,14 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
             theta = []
             psi = []
             
-            x_ds_name = f'{node_id}_pos_x_ds'
-            y_ds_name = f'{node_id}_pos_y_ds'
-            z_ds_name = f'{node_id}_pos_z_ds'
-            phi_ds_name = f'{node_id}_phi_ds'
-            theta_ds_name = f'{node_id}_theta_ds'
-            psi_ds_name = f'{node_id}_psi_ds'
+            node_id_str = node_id.replace('-','_').split('_')
+            node_id_str = '_'.join(node_id_str[-4:-1])
+            x_ds_name = f'{node_id_str}_pos_x_ds'
+            y_ds_name = f'{node_id_str}_pos_y_ds'
+            z_ds_name = f'{node_id_str}_pos_z_ds'
+            phi_ds_name = f'{node_id_str}_phi_ds'
+            theta_ds_name = f'{node_id_str}_theta_ds'
+            psi_ds_name = f'{node_id_str}_psi_ds'
             
             pos_ds_names = {'x':x_ds_name,'y':y_ds_name,'z':z_ds_name}
             euler_ds_names = {'phi':phi_ds_name,'theta':theta_ds_name,'psi':psi_ds_name}
@@ -171,17 +173,17 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
             aedt.add_dataset(psi_ds_name,psi_ds)
             
             #create dataset for each body part
-            cs_name = aedt.create_cs_dataset(node_id+'_cs',
-                                             pos_ds_names=pos_ds_names,
-                                             euler_ds_names=euler_ds_names,
-                                             reference_cs=base_cs,
-                                             loop_animation=loop_animation)
+            cs_name = aedt.create_cs_dataset(node_id_str+'_cs',
+                                              pos_ds_names=pos_ds_names,
+                                              euler_ds_names=euler_ds_names,
+                                              reference_cs=base_cs,
+                                              loop_animation=loop_animation)
         
             #using material propety human_avg for assignment
             imported_names = aedt.import_stl(file_name, cs_name=cs_name)
             aedt.assign_material(imported_names,'pec')
-            aedt.assign_boundary(imported_names,'human_avg',bc_name=node_id+ "_bc")
-            aedt.convert_to_3d_comp(node_id,cs_name)
+            aedt.assign_boundary(imported_names,'human_avg',bc_name=node_id_str+ "_bc")
+            aedt.convert_to_3d_comp(node_id_str,cs_name,parts = imported_names)
             
             #used for testing
             # aedt.rotate(node_id,rot_ds_name=phi_ds_name,axis='Z',reference_cs='Global')
