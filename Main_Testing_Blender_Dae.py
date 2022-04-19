@@ -8,15 +8,20 @@ HFSS project to be ready to run for radar simulations
 This is for testing how blender export a slightly different format of dae than
 what is availble on mixamo.
 
+There are a lot of variation depending on the sources of bvh/fbx file, so this is just an attempt
+to convert a few known sources. There are a few hard coded values that may need to be changed
+You can use this as an example but it may not work for every fbx
+
 @author: asligar
 """
 
 from pyaedt import Hfss
 import pyvista as pv
 import numpy as np
-from Lib.Dae_Import import AnimatedDAE2
-from Lib.Dae_Import import AnimatedBVH
-from Lib.Dae_Import import rot_to_euler
+from Lib.Dae_Import import AnimatedDAE #this seems to work for animations downloaded from mixamo
+from Lib.Dae_Import import AnimatedDAE2 #this works for certain fbx export
+from Lib.Dae_Import import AnimatedDAE3 #this is an example of converting fbx files from https://mocap.cs.sfu.ca/
+from Lib.Dae_Import import rot_to_euler 
 from Lib.Dae_Import import CoordSys
 from Lib.AEDT_Utils import AEDTutils
 from scipy.signal import savgol_filter
@@ -30,8 +35,8 @@ import copy
 
 #full path to file name that we want to import
 #IMPORTANT USE DAE  FILE
-filename = './example_dae/  .dae'
 
+filename = '*.dae'
 #Define Framerate, ideally should be same as DAE file, but interpolation will allow any frame rate
 fps=30
 
@@ -41,7 +46,7 @@ smoothing=False
 remove_hands=True 
 loop_animation=True
 aedt_version = "2022.1"
-create_AEDT_proj = True
+create_AEDT_proj = False
 
 ###############################################################################
 #
@@ -196,35 +201,22 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
                 rarms = ['sbui_RightArm','sbui_RightForeArm']
                 # if part == 'sbui_Spine1':
                 #     mesh.translate([0,-.05,0])
+                #need to add some rotation
                 if node_id_str in legs:
-                    #mesh.rotate_x(180)
+                    #
                     aedt.rotate(imported_names,single_rot=180,axis='X',reference_cs=cs_name)
                 if node_id_str in foot:
-                    # mesh.rotate_x(-90)
-                    # mesh.rotate_y(180)
                     aedt.rotate(imported_names,single_rot=-90,axis='X',reference_cs=cs_name)
                     aedt.rotate(imported_names,single_rot=180,axis='Y',reference_cs=cs_name)
-
                 if node_id_str in rarms:
-                    # mesh.rotate_y(-90)
-                    # mesh.rotate_x(90)
                     aedt.rotate(imported_names,single_rot=-90,axis='Y',reference_cs=cs_name)
                     aedt.rotate(imported_names,single_rot=90,axis='X',reference_cs=cs_name)
                 if node_id_str in larms:
-                    # mesh.rotate_x(180)
-                    # mesh.rotate_y(-90)
-                    # mesh.rotate_x(90)
-                    # mesh.rotate_z(180)
                     aedt.rotate(imported_names,single_rot=180,axis='X',reference_cs=cs_name)
                     aedt.rotate(imported_names,single_rot=-90,axis='Y',reference_cs=cs_name)
                     aedt.rotate(imported_names,single_rot=90,axis='X',reference_cs=cs_name)
                     aedt.rotate(imported_names,single_rot=180,axis='Z',reference_cs=cs_name)
-                #used for testing
-                # aedt.rotate(node_id,rot_ds_name=phi_ds_name,axis='Z',reference_cs='Global')
-                # aedt.rotate(node_id,rot_ds_name=theta_ds_name,axis='X')
-                # aedt.rotate(node_id,rot_ds_name=psi_ds_name,axis='Z')
-                # aedt.move(node_id,pos_ds_names,reference_cs='Global')
-                
+
             #create CS for radar location, create simple parametric tx/rx antenna
             radar_cs = aedt.create_cs('radar_cs',pos=[10,0,0],euler=[180,0,0])
             aedt.insert_parametric_antenna('tx','30deg','80deg','Vertical',cs=radar_cs)
