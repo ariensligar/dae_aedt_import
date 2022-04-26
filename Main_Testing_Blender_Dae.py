@@ -36,7 +36,7 @@ import copy
 #full path to file name that we want to import
 #IMPORTANT USE DAE  FILE
 
-filename = '*.dae'
+filename = './example_dae/<name of dae>.dae'
 #Define Framerate, ideally should be same as DAE file, but interpolation will allow any frame rate
 fps=30
 
@@ -46,7 +46,7 @@ smoothing=False
 remove_hands=True 
 loop_animation=True
 aedt_version = "2022.1"
-create_AEDT_proj = False
+create_AEDT_proj = True
 
 ###############################################################################
 #
@@ -193,7 +193,7 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
                 imported_names = aedt.import_stl(file_name, cs_name=cs_name)
                 aedt.assign_material(imported_names,'pec')
                 aedt.assign_boundary(imported_names,'human_avg',bc_name=node_id_str+ "_bc")
-                #aedt.convert_to_3d_comp(node_id_str,cs_name,parts = imported_names)
+                
                 
                 legs = ['sbui_LeftLeg','sbui_RightLeg','sbui_LeftUpLeg','sbui_RightUpLeg']
                 foot = ['sbui_LeftFoot','sbui_RightFoot']
@@ -202,6 +202,7 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
                 # if part == 'sbui_Spine1':
                 #     mesh.translate([0,-.05,0])
                 #need to add some rotation
+                print(imported_names)
                 if node_id_str in legs:
                     #
                     aedt.rotate(imported_names,single_rot=180,axis='X',reference_cs=cs_name)
@@ -216,7 +217,9 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
                     aedt.rotate(imported_names,single_rot=-90,axis='Y',reference_cs=cs_name)
                     aedt.rotate(imported_names,single_rot=90,axis='X',reference_cs=cs_name)
                     aedt.rotate(imported_names,single_rot=180,axis='Z',reference_cs=cs_name)
-
+                aedt.convert_to_3d_comp(node_id_str,cs_name,parts = imported_names)
+                
+                
             #create CS for radar location, create simple parametric tx/rx antenna
             radar_cs = aedt.create_cs('radar_cs',pos=[10,0,0],euler=[180,0,0])
             aedt.insert_parametric_antenna('tx','30deg','80deg','Vertical',cs=radar_cs)
