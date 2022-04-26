@@ -328,7 +328,7 @@ class AEDTutils:
         return name_of_objects_imported
 
         
-    def convert_to_3d_comp(self,name,cs_name,parts = None):
+    def convert_to_3d_comp(self,name,cs_name,parts = None,boundary_conditions=None):
         oEditor = self.aedtapp.odesign.SetActiveEditor("3D Modeler")
         if parts==None:
             parts= [name]
@@ -358,7 +358,8 @@ class AEDTutils:
                 "ParameterDescription:=", []
             ], 
             [
-                "NAME:DesignData"
+                "NAME:DesignData",
+                "Boundaries:="		, [boundary_conditions]
             ], 
             [
                 "NAME:ImageFile",

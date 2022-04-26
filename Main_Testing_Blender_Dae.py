@@ -36,7 +36,7 @@ import copy
 #full path to file name that we want to import
 #IMPORTANT USE DAE  FILE
 
-filename = './example_dae/<name of dae>.dae'
+filename = './example_dae/<dae_filename>.dae'
 #Define Framerate, ideally should be same as DAE file, but interpolation will allow any frame rate
 fps=30
 
@@ -192,7 +192,7 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
                 #using material propety human_avg for assignment
                 imported_names = aedt.import_stl(file_name, cs_name=cs_name)
                 aedt.assign_material(imported_names,'pec')
-                aedt.assign_boundary(imported_names,'human_avg',bc_name=node_id_str+ "_bc")
+                bc_name= aedt.assign_boundary(imported_names,'human_avg',bc_name=node_id_str+ "_bc")
                 
                 
                 legs = ['sbui_LeftLeg','sbui_RightLeg','sbui_LeftUpLeg','sbui_RightUpLeg']
@@ -217,7 +217,7 @@ def main(filename,fps,smoothing=False,remove_hands=True,aedt_version= "2021.2"):
                     aedt.rotate(imported_names,single_rot=-90,axis='Y',reference_cs=cs_name)
                     aedt.rotate(imported_names,single_rot=90,axis='X',reference_cs=cs_name)
                     aedt.rotate(imported_names,single_rot=180,axis='Z',reference_cs=cs_name)
-                aedt.convert_to_3d_comp(node_id_str,cs_name,parts = imported_names)
+                aedt.convert_to_3d_comp(node_id_str,cs_name,parts = imported_names,boundary_conditions=bc_name)
                 
                 
             #create CS for radar location, create simple parametric tx/rx antenna
